@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Nov 21 14:38:53 2015
-
-@author: Pavitrakumar
-
-"""
-
 import numpy as np
 from scipy.misc.pilutil import imresize
 import cv2  # version 3.2.0
@@ -14,9 +6,9 @@ from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.utils import shuffle
-import os
-
+from shutil import copyfile
 import warnings
+
 warnings.filterwarnings("ignore")
 
 DIGIT_WIDTH = 10
@@ -26,8 +18,6 @@ IMG_WIDTH = 28
 CLASS_N = 10  # 0-9
 
 
-# This method splits the input training image into small cells (of a single digit) and uses these cells as training data.
-# The default training image (MNIST) is a 1000x1000 size image and each digit is of size 10x20. so we divide 1000/10 horizontally and 1000/20 vertically.
 def split2d(img, cell_size, flatten=True):
     h, w = img.shape[:2]
     sx, sy = cell_size
@@ -92,31 +82,20 @@ class SVM_MODEL():
         results = self.model.predict(samples.reshape(-1, self.features))
         return results[1].ravel()
 
-    # def save(self, address):
-    #     self.model.save(address)
 
 def get_digits(contours, hierarchy):
     hierarchy = hierarchy[0]
     bounding_rectangles = [cv2.boundingRect(ctr) for ctr in contours]
     final_bounding_rectangles = []
-    # find the most common heirarchy level - that is where our digits's bounding boxes are
     u, indices = np.unique(hierarchy[:, -1], return_inverse=True)
     most_common_heirarchy = u[np.argmax(np.bincount(indices))]
 
     for r, hr in zip(bounding_rectangles, hierarchy):
         x, y, w, h = r
-        # this could vary depending on the image you are trying to predict
-        # we are trying to extract ONLY the rectangles with images in it (this is a very simple way to do it)
-        # we use heirarchy to extract only the boxes that are in the same global level - to avoid digits inside other digits
-        # ex: there could be a bounding box inside every 6,9,8 because of the loops in the number's appearence - we don't want that.
-        # read more about it here: https://docs.opencv.org/trunk/d9/d8b/tutorial_py_contours_hierarchy.html
         if ((w * h) > 250) and (10 <= w <= 200) and (10 <= h <= 200) and hr[3] == most_common_heirarchy:
             final_bounding_rectangles.append(r)
 
     return final_bounding_rectangles
-
-
-from shutil import copyfile
 
 
 def proc_user_img(img_file, model, image=None):
@@ -156,7 +135,6 @@ def proc_user_img(img_file, model, image=None):
     #     plt.imshow(im)
     cv2.imwrite("output1X.png", im)
     copyfile("output1X.png", "static/output1.png")
-
     #     cv2.imwrite("final_digits.png",blank_image)
     #     cv2.destroyAllWindows()
     #     retval, buffer = cv2.imencode('.png', im)
@@ -166,9 +144,7 @@ def proc_user_img(img_file, model, image=None):
 
 
 def runs(model, image):
-    #     print("Inside Runs,dims = ",image.shape)
     im = image
-    #     print("Image",im)
     blank_image = np.zeros((im.shape[0], im.shape[1], 3), np.uint8)
     blank_image.fill(255)
 
@@ -201,7 +177,6 @@ def runs(model, image):
     #     plt.imshow(im)
     cv2.imwrite("output1X.png", im)
     copyfile("output1X.png", "static/output1.png")
-
     #     cv2.imwrite("final_digits.png",blank_image)
     #     cv2.destroyAllWindows()
     #     retval, buffer = cv2.imencode('.png', im)
@@ -214,9 +189,6 @@ def get_contour_precedence(contour, cols):
     return contour[1] * cols + contour[0]  # row-wise ordering
 
 
-# this function processes a custom training image
-# see example : custom_train.digits.jpg
-# if you want to use your own, it should be in a similar format
 def load_digits_custom(img_file):
     train_data = []
     train_target = []
@@ -232,9 +204,8 @@ def load_digits_custom(img_file):
     thresh = cv2.erode(thresh, kernel, iterations=1)
 
     _, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    digits_rectangles = get_digits(contours, hierarchy)  # rectangles of bounding the digits in user image
+    digits_rectangles = get_digits(contours, hierarchy)
 
-    # sort rectangles accoring to x,y pos so that we can label them
     digits_rectangles.sort(key=lambda x: get_contour_precedence(x, im.shape[1]))
 
     for index, rect in enumerate(digits_rectangles):
@@ -260,21 +231,17 @@ TRAIN_MNIST_IMG = 'digits.png'
 TRAIN_USER_IMG = 'custom_train_digits.jpg'
 TEST_USER_IMG = 'image.jpeg'  # 'test_image.png'
 
-digits, labels = load_digits(TRAIN_MNIST_IMG)  # original MNIST data (not good detection)
-# digits, labels = load_digits_custom(TRAIN_USER_IMG) #my handwritten dataset (better than MNIST on my handwritten digits)
+digits, labels = load_digits(TRAIN_MNIST_IMG)  # original MNIST data
+# digits, labels = load_digits_custom(TRAIN_USER_IMG) # custom handwritten dataset
 
-print('train data shape', digits.shape)
-print('test data shape', labels.shape)
+# print('train data shape', digits.shape)
+# print('test data shape', labels.shape)
 
 digits, labels = shuffle(digits, labels, random_state=256)
 train_digits_data = pixels_to_hog_20(digits)
 X_train, X_test, y_train, y_test = train_test_split(train_digits_data, labels, test_size=0.33, random_state=42)
 
-
-
-
-
-#------------------training and testing----------------------------------------
+# ------------------training and testing----------------------------------------
 
 # model = KNN_MODEL(k = 3)
 # model.train(X_train, y_train)
@@ -283,23 +250,19 @@ X_train, X_test, y_train, y_test = train_test_split(train_digits_data, labels, t
 #
 # model = KNN_MODEL(k = 4)
 # model.train(train_digits_data, labels)
-# pred_ans_knn = proc_user_img(TEST_USER_IMG, model)
+# proc_user_img(TEST_USER_IMG, model)
 
 
-
-
-
-model = SVM_MODEL(num_feats = train_digits_data.shape[1])
+model = SVM_MODEL(num_feats=train_digits_data.shape[1])
 model.train(X_train, y_train)
 preds = model.predict(X_test)
-print('Accuracy: ',accuracy_score(y_test, preds))
+print('Accuracy: ', accuracy_score(y_test, preds))
 
-model = SVM_MODEL(num_feats = train_digits_data.shape[1])
+model = SVM_MODEL(num_feats=train_digits_data.shape[1])
 model.train(train_digits_data, labels)
-pred_ans_svm = proc_user_img(TEST_USER_IMG, model)
-# model.save("SVMmodel.xml")
+proc_user_img(TEST_USER_IMG, model)
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 def deploy(filename):
@@ -313,6 +276,3 @@ def get_np_array_from_file(tar_extractfl):
 def deployImg(file):
     im = cv2.imdecode(get_np_array_from_file(file), 1)
     return runs(model, im)
-
-
-
