@@ -217,9 +217,9 @@ def load_digits_custom(img_file):
 
 # ------------------data preparation--------------------------------------------
 
-TRAIN_MNIST_IMG = 'digits.png'
-TRAIN_USER_IMG = 'custom_train_digits.jpg'
-TEST_USER_IMG = 'image.jpeg'  # 'test_image.png'
+TRAIN_MNIST_IMG = 'training_images/digits.png'
+TRAIN_USER_IMG = 'training_images/custom_train_digits.jpg'
+TEST_USER_IMG = 'testing_images/testing_image_1.jpeg'  # 'test_image.png'
 
 # digits, labels = load_digits(TRAIN_MNIST_IMG)  # original MNIST data
 digits, labels = load_digits_custom(TRAIN_USER_IMG)  # custom handwritten dataset - Better results obtained
