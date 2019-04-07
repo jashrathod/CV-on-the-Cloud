@@ -1,11 +1,27 @@
 <html>
 
 <body>
-<h1>Hello</h1>
-<form action="/api" method="post" enctype="multipart/form-data">
-  Select a file: <input type="file" name="file" ><br><br>
-  <input type="submit">
-</form>
+
+  <h1>CV on the Cloud</h1>
+
+  <form action="/api" method="post" enctype="multipart/form-data">
+    Select a file: <input type="file" name="file" required >
+    <br><br>
+    <input type="Submit" >
+  </form>
+
+  <br><br>
+
+  <form action="/logout" method="get" >
+    <Button type="submit" name="logout_button" >Logout</Button>
+  </form>
+
+  <br><br>
+
+  <form action="/delete" method="get" >
+    Want to Delete your Account? <Button type="submit" name="delete_button" >Delete</Button>
+  </form>
 
 </body>
+
 </html>
