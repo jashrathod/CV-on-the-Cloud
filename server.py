@@ -2,7 +2,10 @@ from flask import Flask, render_template, url_for, request, session, redirect
 from flask_pymongo import PyMongo
 import digit
 import bcrypt
+import base64
 import warnings
+import json
+from bson import json_util
 
 warnings.filterwarnings("ignore")
 
@@ -35,11 +38,6 @@ def recogize():
     return response
 
 
-# @app.route('/')
-# def home():
-#     return render_template('frontPage.html')
-
-
 @app.route('/login', methods=['POST'])
 def login():
     users = mongo.db.CV_Cloud_login
@@ -70,13 +68,34 @@ def register():
     return render_template('register.html')
 
 
+@app.route('/fixIssue')
+def fixIssue():
+    with open("output1X.png", "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read())
+    images = mongo.db.CV_Cloud_images
+    images.insert({'image': encoded_string})
+    return render_template("fixIssue.html")
+
+
+@app.route('/loadImgfromDB')
+def loadImgfromDB():
+    db = mongo.db.CV_Cloud_images
+    data = list(db.find())
+    data1 = json.loads(json.dumps(data, default=json_util.default))
+    img = data1[-1]
+    img1 = img['image']['$binary']
+    decoded = base64.b64decode(img1)
+    decoded = decoded.decode('utf-8')
+    img_tag = '<img src="data:image/png;base64,{0}">'.format(decoded)
+    return img_tag
+
+
 @app.route('/api', methods=['POST'])
 def api():
     file = request.files['file']
     print("Input Received:", file)
-    imFile = digit.deployImg(file)
-    response = "<image src='/static/output1.png' />"
-    return response
+    digit.deployImg(file)
+    return render_template("showImg.html")
 
 
 @app.route('/logout', methods=['GET', 'POST'])
@@ -88,11 +107,10 @@ def logout():
 def delete_item():
     users = mongo.db.CV_Cloud_login
     users.remove({'name': session['username']})
-    return render_template('redirect_homepage.html')
+    return render_template('redirect.html')
 
 
 if __name__ == '__main__':
     app.secret_key = 'mysecret'
     app.debug = True
     app.run(host='0.0.0.0', port="1000")
-    # app.run()

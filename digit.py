@@ -172,7 +172,46 @@ def runs(model, image):
 
     cv2.imwrite("output1X.png", im)
     copyfile("output1X.png", "static/output1.png")
-    return None
+    return im
+
+
+def store_img_runs(model, image):
+    im = image
+    blank_image = np.zeros((im.shape[0], im.shape[1], 3), np.uint8)
+    blank_image.fill(255)
+
+    imgray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    plt.imshow(imgray)
+    kernel = np.ones((5, 5), np.uint8)
+
+    ret, thresh = cv2.threshold(imgray, 127, 255, 0)
+    thresh = cv2.erode(thresh, kernel, iterations=1)
+    thresh = cv2.dilate(thresh, kernel, iterations=1)
+    thresh = cv2.erode(thresh, kernel, iterations=1)
+
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    digits_rectangles = get_digits(contours, hierarchy)  # rectangles of bounding the digits in user image
+    pred_arr = []
+    img_arr = []
+
+    for rect in digits_rectangles:
+        x, y, w, h = rect
+        cv2.rectangle(im, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        im_digit = imgray[y:y + h, x:x + w]
+        im_digit = (255 - im_digit)
+        im_digit = imresize(im_digit, (IMG_WIDTH, IMG_HEIGHT))
+        img_arr.append(im_digit)
+        hog_img_data = pixels_to_hog_20([im_digit])
+        pred = model.predict(hog_img_data)
+        cv2.putText(im, str(int(pred[0])), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 3)
+        cv2.putText(blank_image, str(int(pred[0])), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 0, 0), 5)
+        pred_arr.append(pred[0])
+
+    cv2.imwrite("output1X.png", im)
+    copyfile("output1X.png", "static/output1.png")
+
+    return img_arr, pred_arr
 
 
 def get_contour_precedence(contour, cols):
@@ -263,3 +302,13 @@ def get_np_array_from_file(tar_extractfile):
 def deployImg(file):
     im = cv2.imdecode(get_np_array_from_file(file), 1)
     return runs(model, im)
+
+
+def deployImgCheck(file):
+    im = cv2.imdecode(get_np_array_from_file(file), 1)
+    return store_img_runs(model, im)
+
+
+# def store_img(img_file):
+#     cv2.imwrite("output2X.png", img_file)
+#     copyfile("output2X.png", "static/outputdb1.png")
