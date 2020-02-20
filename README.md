@@ -12,6 +12,7 @@ Artificial Intelligence is changing the face of a lot many industries. Image pro
 
 <img src="/static/documentation_images/Diagram.png" width=500>
 
+
 ## Objective
 
 The mission is to develop and provide state-of-the-art AI tool, putting the latest machine learning technologies to work for the Users. With its ability to handle compute and data analytics at any scale, Cloud computing accelerates the capabilities of machine learning at an unprecedented level.
